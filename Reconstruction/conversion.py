@@ -321,11 +321,11 @@ trigger_times3,horizontal_offsets6 = get_segment_times(inputFiles[5],offset,nseg
 trigger_times3,horizontal_offsets7 = get_segment_times(inputFiles[6],offset,nsegments)
 trigger_times3,horizontal_offsets8 = get_segment_times(inputFiles[7],offset,nsegments)
 
-for i in range(20):
-	print "delta offsets 1st group %i %0.4f" % (i,1e12*(horizontal_offsets[i]-horizontal_offsets2[i]))
-	print "delta offsets 2 groups %i %0.4f" % (i,1e12*(horizontal_offsets[i]-horizontal_offsets3[i]))
-for i in range(20):
-	print "Offsets %i %0.1f %0.1f %0.1f %0.1f %0.1f %0.1f %0.1f %0.1f" % (i,1e12*horizontal_offsets[i] +25000,1e12*horizontal_offsets2[i] +25000,1e12*horizontal_offsets3[i] +25000,1e12*horizontal_offsets4[i] +25000,1e12*horizontal_offsets5[i] +25000,1e12*horizontal_offsets6[i] +25000,1e12*horizontal_offsets7[i] +25000,1e12*horizontal_offsets8[i]+25000)
+# for i in range(20):
+# 	print "delta offsets 1st group %i %0.4f" % (i,1e12*(horizontal_offsets[i]-horizontal_offsets2[i]))
+# 	print "delta offsets 2 groups %i %0.4f" % (i,1e12*(horizontal_offsets[i]-horizontal_offsets3[i]))
+# for i in range(20):
+# 	print "Offsets %i %0.1f %0.1f %0.1f %0.1f %0.1f %0.1f %0.1f %0.1f" % (i,1e12*horizontal_offsets[i] +25000,1e12*horizontal_offsets2[i] +25000,1e12*horizontal_offsets3[i] +25000,1e12*horizontal_offsets4[i] +25000,1e12*horizontal_offsets5[i] +25000,1e12*horizontal_offsets6[i] +25000,1e12*horizontal_offsets7[i] +25000,1e12*horizontal_offsets8[i]+25000)
 #print "Trigger times: ",trigger_times
 #print "Horizontal offsets: ",horizontal_offsets
 
