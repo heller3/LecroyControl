@@ -16,7 +16,7 @@ initial = time.time()
 
 RawDataPath = ""
 RawDataLocalCopyPath = ""
-OutputFilePath = ""
+OutputFilePath = "/home/daq/2021_CMSTiming_ETL/LecroyScope/RecoData/ConversionRECO/"
 
 LocalMode=True
 CopyToEOS=True
@@ -27,7 +27,7 @@ if os.path.exists("_condor_stdout"):
 
 if LocalMode:
 	RawDataPath = "/home/daq/LecroyMount/"
-	RawDataLocalCopyPath = "/home/daq/LecroyAcquisition/"
+	RawDataLocalCopyPath = "/home/daq/2021_CMSTiming_ETL/LecroyScope/RawData/"
 
 #### Memory addresses #####
 WAVEDESC=11
@@ -283,7 +283,7 @@ for ic in range(nchan):
 end = time.time()
 print "\nCopying files locally took %i seconds." % (end-start)
 
-outputFile = "converted_run%i.root"%runNumber
+outputFile = "%sconverted_run%i.root"%(OutputFilePath, runNumber)
 
 #inputFile = "%s/C1--Trace%i.trc" %(RawDataPath,runNumber)  ### use ch1 to get information
 ##### Get necessary information about format
@@ -339,11 +339,13 @@ i_evt = np.zeros(1,dtype=np.dtype("u4"))
 segment_time = np.zeros(1,dtype=np.dtype("f"))
 channel = np.zeros([8,points_per_frame],dtype=np.float32)
 time_array = np.zeros([1,points_per_frame],dtype=np.float32)
+time_offsets = np.zeros(8,dtype=np.dtype("f"))
 
 outTree.Branch('i_evt',i_evt,'i_evt/i')
 outTree.Branch('segment_time',segment_time,'segment_time/F')
 outTree.Branch('channel', channel, 'channel[%i][%i]/F' %(nchan,points_per_frame) )
 outTree.Branch('time', time_array, 'time[1]['+str(points_per_frame)+']/F' )
+outTree.Branch('timeoffsets',time_offsets,'timeoffsets[8]/F')
 
 for i in range(nsegments):
     if i%1000==0:
@@ -359,6 +361,14 @@ for i in range(nsegments):
     time_array[0]    = calc_horizontal_array(points_per_frame,horizontal_interval,horizontal_offsets[i])
     i_evt[0]   = i
     segment_time[0] = trigger_times[i]
+    time_offsets[0] = horizontal_offsets[i] -horizontal_offsets[i]
+    time_offsets[1] = horizontal_offsets2[i]-horizontal_offsets[i]
+    time_offsets[2] = horizontal_offsets3[i]-horizontal_offsets[i]
+    time_offsets[3] = horizontal_offsets4[i]-horizontal_offsets[i]
+    time_offsets[4] = horizontal_offsets5[i]-horizontal_offsets[i]
+    time_offsets[5] = horizontal_offsets6[i]-horizontal_offsets[i]
+    time_offsets[6] = horizontal_offsets7[i]-horizontal_offsets[i]
+    time_offsets[7] = horizontal_offsets8[i]-horizontal_offsets[i]
 
     outTree.Fill()
 

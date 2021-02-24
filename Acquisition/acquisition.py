@@ -135,8 +135,9 @@ lecroy.write("TRIG_DELAY %i ns"%args.timeoffset)
 
 ####### Trigger setup ######
 lecroy.write("TRIG_SELECT Edge,SR,%s"%args.trigCh)
-lecroy.write("%s:TRLV %0.3fV"%(args.trigCh,args.trig))
-lecroy.write("TRIG_SLOPE %s" %args.trigSlope)
+if args.trigCh != "LINE":
+	lecroy.write("%s:TRLV %0.3fV"%(args.trigCh,args.trig))
+	lecroy.write("TRIG_SLOPE %s" %args.trigSlope)
 
 print "\nTriggering on %s with %0.3fV threshold, %s polarity." %(args.trigCh,args.trig,args.trigSlope)
 
@@ -157,12 +158,20 @@ now = datetime.datetime.now()
 current_time = now.strftime("%H:%M:%S")
 print "\n \n \n  -------------  Starting acquisition at %s. ---------------"%current_time
 lecroy.write("*TRG")
+#prewait = time.time()
+#lecroy.query(r"""vbs? 'app.waituntilidle(7)' """)
+#time.sleep(7)
+#postwait=time.time()
+#print "wait until idle took %i seconds."%(postwait-prewait)
+
+
 #lecroy.write("ARM")
 lecroy.write("WAIT")
 #ime.sleep(10)
-
+#print "Finished waiting, attempting stop."
 #lecroy.write("STOP;*OPC?")
-# lecroy.write("STOP")
+#lecroy.write("STOP")
+#time.sleep(10)
 # lecroy.write("WAIT")
 
 
