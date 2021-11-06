@@ -37,9 +37,9 @@ parser = argparse.ArgumentParser(description='Run info.')
 
 parser.add_argument('--numEvents',metavar='Events', type=str,default = 500, help='numEvents (default 500)',required=False)
 parser.add_argument('--runNumber',metavar='runNumber', type=str,default = -1, help='runNumber (default -1)',required=False)
-parser.add_argument('--sampleRate',metavar='sampleRate', type=str,default = 10, help='Sampling rate (default 20)',required=False)
-parser.add_argument('--horizontalWindow',metavar='horizontalWindow', type=str,default = 50, help='horizontal Window (default 125)',required=False)
-# parser.add_argument('--numPoints',metavar='Points', type=str,default = 500, help='numPoints (default 500)',required=True)
+parser.add_argument('--sampleRate',metavar='sampleRate', type=float,default = 10, help='Sampling rate (GSa/s) (default 10)',required=False)
+#parser.add_argument('--horizontalWindow',metavar='horizontalWindow', type=str,default = 10, help='Full horizontal window in ms (default 10)',required=False)
+parser.add_argument('--numPoints',metavar='Points', type=int,default = 10, help='num Msamples (default 10)',required=True)
 parser.add_argument('--trigCh',metavar='trigCh', type=str, default='EX',help='trigger Channel (EX, or CN',required=False)
 parser.add_argument('--trig',metavar='trig', type=float, default= 0.150, help='trigger value in V',required=False)
 parser.add_argument('--trigSlope',metavar='trigSlope', type=str, default= 'NEGative', help='trigger slope; positive(rise) or negative(fall)',required=False)
@@ -76,7 +76,7 @@ runNumber = int(args.runNumber)
 if trigCh != "AUX": trigCh = 'CHANnel'+trigCh
 trigLevel = float(args.trig)
 triggerSlope = args.trigSlope
-timeoffset = float(args.timeoffset)*1e-9
+timeoffset = float(args.timeoffset)
 # print "timeoffset is ",timeoffset
 date = datetime.datetime.now()
 # savewaves = int(args.save)
@@ -131,18 +131,29 @@ lecroy.write("BANDWIDTH_LIMIT OFF")
 
 ####### Horizontal setup ########
 
-time_div_in_ns = int(args.horizontalWindow)/10 ## specify full window as argument
-print "\nTimebase: %i ns/div." % time_div_in_ns
-if time_div_in_ns != 2 and time_div_in_ns != 5 and time_div_in_ns!=500000 and time_div_in_ns!=1000000:
-	print "Warning: time base must fit predefined set of possible values."
+# time_div_in_ns = int(args.horizontalWindow)*1e6/10 ## specify full window as argument
+# print "\nTimebase: %i ns/div." % time_div_in_ns
+# if time_div_in_ns != 2 and time_div_in_ns != 5 and time_div_in_ns!=500000:
+# 	print "Warning: time base must fit predefined set of possible values."
+# lecroy.write("TIME_DIV %iNS"%time_div_in_ns)
+
+
+
 sample_rate_in_GS = args.sampleRate
+nsamples = args.numPoints * 1e6
+
+#nsamples = 10 * sample_rate_in_GS * time_div_in_ns
+
+time_div_in_ns = nsamples /(10*sample_rate_in_GS)
 
 lecroy.write("TIME_DIV %iNS"%time_div_in_ns)
-print "\tMake sure sampling rate is set to 10 GS/s manually."
+lecroy.write("MSIZ %i"%nsamples)
+
+print "\tMake sure sampling rate is set to desired value manually."
 # lecroy.write("TIME_DIV e-9")
 
-print "Setting horizontal offset 50 %i ns" %args.timeoffset
-lecroy.write("TRIG_DELAY %i ns"%args.timeoffset)
+print "Setting horizontal offset %0.2f s" %timeoffset
+lecroy.write("TRIG_DELAY %i ns"%(timeoffset*1e9))
 
 
 ####### Trigger setup ######
@@ -163,8 +174,9 @@ lecroy.write("STORE_SETUP ALL_DISPLAYED,HDD,AUTO,OFF,FORMAT,BINARY")
 
 nevents = int(args.numEvents)
 ##Sequence configuration
-print "\nTaking %i events in sequence mode."%nevents
-lecroy.write("SEQ ON,%i"%nevents)
+#print "\nTaking %i events in sequence mode."%nevents
+lecroy.write("SEQ OFF")#,%i"%nevents)
+#lecroy.write("SEQ ON,%i"%nevents)
 start = time.time()
 now = datetime.datetime.now()
 current_time = now.strftime("%H:%M:%S")
