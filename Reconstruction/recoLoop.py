@@ -68,7 +68,7 @@ while True:
             #print ConversionCmd
             os.system(ConversionCmd)
        
-        
+        if useSingleEvent: continue
         print 'Doing dattoroot for run %i' % run       
         # DattorootCmd = '/home/daq/ScopeTimingDAQ/TimingDAQ/NetScopeStandaloneDat2Root --config_file=/home/daq/ScopeTimingDAQ/TimingDAQ/config/Scope_BetaSource.config --input_file=/home/daq/ScopeData/Converted/run_scope%i.root --output_file=/home/daq/ScopeData/Reco/run_scope%i.root --save_meas' % (run,run)
         

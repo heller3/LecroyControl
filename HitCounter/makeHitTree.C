@@ -46,6 +46,7 @@ float time_since_previous_hit;
 //Input file and branches
 TFile* file_in;
 TTree* tree_in;
+int runNumber;
 
 double sample_width=0;
 
@@ -56,13 +57,15 @@ float* timeoffsets = new float[NUM_CHANNELS];
 double* AUX_time = new double[NUM_TIMES*NUM_SAMPLES];
 float* AUX_channel = new float[NUM_CHANNELS*NUM_SAMPLES];
 
+float channel_polarity[8] = {-1,-1,-1,1,
+							-1,-1,-1,-1}; 
 
 ///// Hit defining parameters   /////
-float tot_thres=20; //mV. Threshold for measuring ToT
+float tot_thres=10; //mV. Threshold for measuring ToT
 
-float threshold = 20; //mV. Threshold for detecting a new hit
-float endthreshold= 10; //mV. Threshold for defining end of a hit
-int nconsec = 2; //Number of consecutive samples that must be over threshold to register a hit
+float threshold = 10; //mV. Threshold for detecting a new hit
+float endthreshold= 8; //mV. Threshold for defining end of a hit
+int nconsec = 4; //Number of consecutive samples that must be over threshold to register a hit
 int nconsecEnd = 4; //Number of consecutive samples that must be within endthreshold of 0 to end pulse
 
 int samples_before=20; //Number of samples before pulse to consider.
@@ -82,13 +85,13 @@ void processChannel(int chan);
 
 int main(int argc, char **argv)
 {
-	int runNumber = stoi(argv[1]);
+	runNumber = stoi(argv[1]);
 
 	//Load input
 	TString inFileName = Form("%s/%s%i.root",inputDir.Data(),inputFileFormat.Data(),runNumber);
 	loadInputFile(inFileName);
-
-	cout<<"Run number: "<< runNumber<<", duration: "<<time_axes[0][NUM_SAMPLES-1] - time_axes[0][0]<<" s"<<endl;
+	float duration = time_axes[0][NUM_SAMPLES-1] - time_axes[0][0];
+	cout<<"Run number: "<< runNumber<<", duration: "<<duration<<" s"<<endl;
 	sample_width = time_axes[0][2] - time_axes[0][1];
 	cout<<"Sample width: "<<sample_width<<" s"<<endl;
 	//Make output tree
@@ -101,6 +104,9 @@ int main(int argc, char **argv)
 		processChannel(ichan);
 	}
 
+	float hits_chan1 = tree->GetEntries("scopechan==1");
+
+	cout<<"Rate in channel index 1: "<<hits_chan1/duration<<" Hz"<<endl;
 	// tree->Fill();
 	tree->Write();
 	file->Close();
@@ -144,7 +150,7 @@ void printSegment(TH1F * h, int start_sample,int end_sample, int chan){
 	tla.DrawLatexNDC(0.75,0.38,Form("Samples above thres: %i",nsamples_above_thresh));
 
 
-	c1->Print(Form("displays/chan_%i_sample_%i.pdf",chan,start_sample));
+	c1->Print(Form("displays/run%i_chan%i_sample_%i.pdf",runNumber,chan,start_sample));
 	// c1->Print(Form("displays/chan_%i_sample_%i.root",chan,start_sample));
 
 }
@@ -153,7 +159,7 @@ void registerHit(int start_sample, int end_sample, int chan, int prev_hit_peak_s
 
 	TH1F * h = new TH1F(Form("h_%i",start_sample),"",end_sample-start_sample+1,time_axes[0][start_sample],time_axes[0][end_sample]);
 	for(int is=start_sample; is<=end_sample;is++){
-		h->SetBinContent(is - start_sample +1,-1000.*vertical_axes[chan][is]);
+		h->SetBinContent(is - start_sample +1,channel_polarity[chan]*1000.*vertical_axes[chan][is]);
 	}
 
 	sample_start = start_sample;
@@ -205,7 +211,7 @@ void processChannel(int chan){
 	int previous_hit_sample_of_local_max=0;
 
 	for(uint isample = 0;isample<NUM_SAMPLES;isample++){
-		float this_sample = -1000.*vertical_axes[chan][isample];
+		float this_sample = channel_polarity[chan]*1000.*vertical_axes[chan][isample];
 		
 		if(!inpulse){ //Not within a pulse yet
 			if(this_sample > threshold){ //above threshold, start counting
