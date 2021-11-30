@@ -3,6 +3,8 @@
 #include <sys/stat.h>
 #include <fstream> 
 #include <iostream> 
+#include <sstream>
+#include <fstream>
 #include "TROOT.h"
 #include <TStyle.h>
 #include "TTree.h"
@@ -28,6 +30,8 @@ const unsigned int NUM_SAMPLES = 50000002;
 // add branches
 
 // TString inputDir="/home/daq/ScopeData/LecroyConverted/";
+TString configDir="/home/daq/LecroyControl/HitCounter/configs/";
+
 TString inputDir="/home/daq/SurvivalBeam2021/LecroyScope/RecoData/ConversionRECO/";
 TString inputFileFormat="converted_run";
 
@@ -67,12 +71,12 @@ float channel_polarity[8] = {-1,-1,-1,1,
 							-1,-1,-1,-1}; 
 
 ///// Hit defining parameters   /////
-float tot_thres=10; //mV. Threshold for measuring ToT
+float tot_thres[8];//=10; //mV. Threshold for measuring ToT
 
-float threshold = 10; //mV. Threshold for detecting a new hit
-float endthreshold= 8; //mV. Threshold for defining end of a hit
-int nconsec = 4; //Number of consecutive samples that must be over threshold to register a hit
-int nconsecEnd = 4; //Number of consecutive samples that must be within endthreshold of 0 to end pulse
+float threshold[8];// = 10; //mV. Threshold for detecting a new hit
+float endthreshold[8];//= 8; //mV. Threshold for defining end of a hit
+int nconsec[8];// = 4; //Number of consecutive samples that must be over threshold to register a hit
+int nconsecEnd[8];// = 4; //Number of consecutive samples that must be within endthreshold of 0 to end pulse
 
 int samples_before=20; //Number of samples before pulse to consider.
 int samples_after=20; //Number of samples after pulse to consider.
@@ -82,6 +86,7 @@ int displays_to_print_per_channel = 15;
 int already_printed[NUM_CHANNELS];
 //////////////////////////////
 
+void readConfigFile();
 void loadInputFile(TString inFileName);
 void prepareOutputTree(TString outFileName);
 void printSegment(TH1F * h, int start_sample,int chan);
@@ -93,6 +98,13 @@ int main(int argc, char **argv)
 {
 	runNumber = stoi(argv[1]);
 	configVersion = stoi(argv[2]);
+
+	//Load config
+	readConfigFile();
+	cout<<"threshold 5 " <<threshold[5]<<endl;
+	cout<<"threshold 6 " <<threshold[6]<<endl;
+	cout<<"nconsec 3 " <<nconsec[3]<<endl;
+
 
 	//Load input
 	TString inFileName = Form("%s/%s%i.root",inputDir.Data(),inputFileFormat.Data(),runNumber);
@@ -119,6 +131,40 @@ int main(int argc, char **argv)
 	file->Close();
 }
 
+
+void readConfigFile(){
+	TString configFileName = Form("%s/config%i.txt",configDir.Data(),configVersion);
+	std::ifstream input(configFileName.Data());
+	string str;
+	if(input){
+	int iteration=0;
+	while (std::getline(input, str))
+	{
+	    if (str.length() ){
+	        std::cout << str << std::endl;
+	        if(iteration>0){
+	        	vector<int> result;
+	        	stringstream s_stream(str); //create string stream from the string
+	        	while(s_stream.good()) {
+	        	   string substr;
+	        	   getline(s_stream, substr, ','); //get first string delimited by comma
+	        	   result.push_back(std::stoi(substr));
+	        	}
+	        
+	        	threshold[iteration-1] = result[0];
+	        	endthreshold[iteration-1] = result[1];
+	        	tot_thres[iteration-1] = result[2];
+	        	nconsec[iteration-1] = result[3];
+	        	nconsecEnd[iteration-1] = result[4];
+
+	        }
+	    }
+
+	    iteration++;
+	}
+}
+else{ cout<<"Error, can't find config: "<<configFileName<<endl;}
+}
 
 void printSegment(TH1F * h, int start_sample,int end_sample, int chan){
 	TCanvas * c1 = new TCanvas(Form("c1_%i",start_sample),"",1200,600);
@@ -182,11 +228,11 @@ void registerHit(int start_sample, int end_sample, int chan, int prev_hit_peak_s
 
 	tot=0;
 	for(int is=maxbin;is>0;is--){
-		if(h->GetBinContent(is) > tot_thres){tot++;}
+		if(h->GetBinContent(is) > tot_thres[chan]){tot++;}
 		else break;
 	}
 	for(int is=maxbin;is<=h->GetNbinsX();is++){
-		if(h->GetBinContent(is) > tot_thres){tot++;}
+		if(h->GetBinContent(is) > tot_thres[chan]){tot++;}
 		else break;
 	}
 
@@ -196,7 +242,7 @@ void registerHit(int start_sample, int end_sample, int chan, int prev_hit_peak_s
 	//Number of samples outside threshold in entire few ns window (noise rejection)
 	nsamples_above_thresh=0;
 	for(int is=1;is<h->GetNbinsX()+1;is++){
-		if(fabs(h->GetBinContent(is)) > tot_thres){nsamples_above_thresh++;}
+		if(fabs(h->GetBinContent(is)) > tot_thres[chan]){nsamples_above_thresh++;}
 	}
 
 	tree->Fill();
@@ -221,7 +267,7 @@ void processChannel(int chan){
 		float this_sample = channel_polarity[chan]*1000.*vertical_axes[chan][isample];
 		
 		if(!inpulse){ //Not within a pulse yet
-			if(this_sample > threshold){ //above threshold, start counting
+			if(this_sample > threshold[chan]){ //above threshold, start counting
 				nover++;
 				if(this_sample > local_max) {
 					local_max= this_sample;
@@ -233,7 +279,7 @@ void processChannel(int chan){
 				i_begin=isample; // store most recent sample below threshold, currently not used
 			}
 
-			if(nover>=nconsec){ //Reached enough samples above threshold to define a new hit.
+			if(nover>=nconsec[chan]){ //Reached enough samples above threshold to define a new hit.
 				inpulse=true;
 				nunder=0;
 				
@@ -241,7 +287,7 @@ void processChannel(int chan){
 		}//not in pulse
 		else{ //in a pulse, now looking to end the pulse.
 
-			if(fabs(this_sample)<endthreshold || fabs(this_sample) <0.1*local_max ) nunder++;
+			if(fabs(this_sample)<endthreshold[chan] || fabs(this_sample) <0.1*local_max ) nunder++;
 			else {
 				nunder=0;
 				if(this_sample > local_max) {
@@ -250,7 +296,7 @@ void processChannel(int chan){
 				}
 			}
 
-			if(nunder>=nconsecEnd){ //Found enough low samples to end pulse and start looking for next one. Reset counters
+			if(nunder>=nconsecEnd[chan]){ //Found enough low samples to end pulse and start looking for next one. Reset counters
 				inpulse = false; // End the pulse
 				nover = 0;
 				nunder = 0;
