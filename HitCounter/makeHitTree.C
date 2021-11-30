@@ -22,10 +22,16 @@ const unsigned int NUM_CHANNELS = 8;
 const unsigned int NUM_TIMES = 1;
 const unsigned int NUM_SAMPLES = 50000002;
 
-TString inputDir="/home/daq/ScopeData/LecroyConverted/";
+// To do
+// Noise calculation
+// config file for each channel
+// add branches
+
+// TString inputDir="/home/daq/ScopeData/LecroyConverted/";
+TString inputDir="/home/daq/SurvivalBeam2021/LecroyScope/RecoData/ConversionRECO/";
 TString inputFileFormat="converted_run";
 
-TString outputDir="/home/daq/LecroyControl/HitCounter/trees/";
+TString outputDir="/home/daq/SurvivalBeam2021/LecroyScope/RecoData/HitCounterRECO/RecoWithoutTracks/";
 TString outputFileFormat="hitTree_run";
 
 // Output root file
@@ -47,7 +53,7 @@ float time_since_previous_hit;
 TFile* file_in;
 TTree* tree_in;
 int runNumber;
-
+int configVersion;
 double sample_width=0;
 
 float** vertical_axes= new float*[NUM_CHANNELS];
@@ -86,6 +92,7 @@ void processChannel(int chan);
 int main(int argc, char **argv)
 {
 	runNumber = stoi(argv[1]);
+	configVersion = stoi(argv[2]);
 
 	//Load input
 	TString inFileName = Form("%s/%s%i.root",inputDir.Data(),inputFileFormat.Data(),runNumber);
@@ -95,7 +102,7 @@ int main(int argc, char **argv)
 	sample_width = time_axes[0][2] - time_axes[0][1];
 	cout<<"Sample width: "<<sample_width<<" s"<<endl;
 	//Make output tree
-	TString outFileName = Form("%s/%s%i.root",outputDir.Data(),outputFileFormat.Data(),runNumber);
+	TString outFileName = Form("%s/v%i/%s%i.root",outputDir.Data(),configVersion,outputFileFormat.Data(),runNumber);
 	prepareOutputTree(outFileName);
 	gStyle->SetGridStyle(3);
 	gStyle->SetGridColor(14);
@@ -104,9 +111,9 @@ int main(int argc, char **argv)
 		processChannel(ichan);
 	}
 
-	float hits_chan1 = tree->GetEntries("scopechan==1");
+	float hits_chan1 = tree->GetEntries("scopechan==3");
 
-	cout<<"Rate in channel index 1: "<<hits_chan1/duration<<" Hz"<<endl;
+	cout<<"Rate in channel index 3: "<<hits_chan1/duration<<" Hz"<<endl;
 	// tree->Fill();
 	tree->Write();
 	file->Close();

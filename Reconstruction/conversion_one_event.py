@@ -16,7 +16,8 @@ initial = time.time()
 
 RawDataPath = ""
 RawDataLocalCopyPath = ""
-OutputFilePath = "/home/daq/ScopeData/LecroyConverted/"
+#OutputFilePath = "/home/daq/ScopeData/LecroyConverted/"
+OutputFilePath = "/home/daq/SurvivalBeam2021/LecroyScope/RecoData/ConversionRECO/"
 
 LocalMode=True
 CopyToEOS=True
@@ -27,7 +28,9 @@ if os.path.exists("_condor_stdout"):
 
 if LocalMode:
 	RawDataPath = "/home/daq/LecroyMount/"
-	RawDataLocalCopyPath = "/home/daq/ScopeData/LecroyRaw/"
+	RawDataLocalCopyPath = "/home/daq/SurvivalBeam2021/LecroyScope/RawData/"
+
+	# RawDataLocalCopyPath = "/home/daq/ScopeData/LecroyRaw/"
 
 #### Memory addresses #####
 WAVEDESC=11
@@ -265,8 +268,8 @@ def get_vertical_array(filepath_in,full_offset,points_per_frame,vertical_gain,ve
 
 def calc_horizontal_array(points_per_frame,horizontal_interval,horizontal_offset):
 
-	print "Horizontal offset is ",horizontal_offset
-	print "Horizontal interval is ",horizontal_interval
+	#print "Horizontal offset is ",horizontal_offset
+	#print "Horizontal interval is ",horizontal_interval
 	x_axis = horizontal_offset + horizontal_interval * np.linspace(0, points_per_frame-1, points_per_frame)
 	
 	return x_axis

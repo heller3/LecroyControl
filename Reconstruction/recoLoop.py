@@ -24,7 +24,9 @@ parser.add_argument('--singleMode',metavar='Single event mode', type=str,default
 args = parser.parse_args()
 
 useSingleEvent =False
-if args.singleMode >0: useSingleEvent=True
+if int(args.singleMode) >0: 
+    useSingleEvent=True
+    print "Using single event mode."
 
 def RunEntriesScope(FileLocation, LGADChannels, LGADThreshold):
     list_hits=[]

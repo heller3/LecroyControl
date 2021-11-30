@@ -20,6 +20,11 @@ lecroy.timeout = 3000000
 lecroy.encoding = 'latin_1'
 lecroy.clear()
 
+run_log_path = "/home/daq/LecroyControl/Acquisition/RunLog.txt"
+
+
+
+
 
 def GetNextNumber():
     run_num_file = "/home/daq/LecroyControl/Acquisition/next_run_number.txt"
@@ -165,6 +170,13 @@ nevents = int(args.numEvents)
 ##Sequence configuration
 print "\nTaking %i events in sequence mode."%nevents
 lecroy.write("SEQ ON,%i"%nevents)
+status = ""
+status = "busy"
+
+run_logf = open(run_log_path,"w")
+run_logf.write(status)
+#run_logf.write("\n")
+run_logf.close()
 start = time.time()
 now = datetime.datetime.now()
 current_time = now.strftime("%H:%M:%S")
@@ -199,16 +211,30 @@ print "\tTrigger rate: %0.1f Hz" %(nevents/duration)
 # print("Storage configuration:")
 # print(lecroy.query("STORE_SETUP?"))
 print("\n\n  -------------  Beginning save waveforms.  ----------------------")
+tmp_file = open(run_log_path,"w")
+status = "writing"
+tmp_file.write(status)
+tmp_file.write("\n")
+tmp_file.close()
+
 
 start = time.time()
 ### save all active channels with single command, using ALL_DISPLAYED ###
-lecroy.write(r"""vbs 'app.SaveRecall.Waveform.TraceTitle="Trace%i" ' """%(runNumber))
-lecroy.write(r"""vbs 'app.SaveRecall.Waveform.SaveFile' """)
+#lecroy.write(r"""vbs 'app.SaveRecall.Waveform.TraceTitle="Trace%i" ' """%(runNumber))
+#lecroy.write(r"""vbs 'app.SaveRecall.Waveform.SaveFile' """)
 #lecroy.write("STORE")
 #for ichan in range(1,9):
 #	lecroy.write("STORE_SETUP C%i,HDD,AUTO,OFF,FORMAT,BINARY"%ichan)
 	#lecroy.write(r"""vbs 'app.SaveRecall.Waveform.SaveFilename="C%i--Trace%i.trc" ' """%(ichan,int(runNumber)))
 	#lecroy.write(r"""vbs 'app.SaveRecall.Waveform.SaveFile' """)
+
+for ichan in range(1,9):
+       print "Saving channel %i"%ichan
+       lecroy.write("STORE_SETUP C%i,HDD,AUTO,OFF,FORMAT,BINARY"%ichan)
+       lecroy.write(r"""vbs 'app.SaveRecall.Waveform.SaveFilename="C%i--Trace%i.trc" ' """%(ichan,int(runNumber)))
+       lecroy.write(r"""vbs 'app.SaveRecall.Waveform.SaveFile' """)
+       lecroy.query("ALST?")
+
 lecroy.query("ALST?")
 end = time.time()
 
@@ -236,6 +262,13 @@ rm.close()
 final = time.time()
 print "\nFinished run %i."%runNumber
 print "Full script duration: %0.f s"%(final-initial)
+tmp_file2 = open(run_log_path,"w")
+status = "ready"
+tmp_file2.write(status)
+tmp_file2.write("\n")
+tmp_file2.close()
+ 
+
 
 
 

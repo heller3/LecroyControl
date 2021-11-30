@@ -20,6 +20,8 @@ lecroy.timeout = 3000000
 lecroy.encoding = 'latin_1'
 lecroy.clear()
 
+run_log_path = "/home/daq/LecroyControl/Acquisition/RunLog.txt"
+
 
 def GetNextNumber():
     run_num_file = "/home/daq/LecroyControl/Acquisition/next_run_number.txt"
@@ -33,9 +35,10 @@ def GetNextNumber():
 
 nchan=8
 
+
+
 parser = argparse.ArgumentParser(description='Run info.')
 
-parser.add_argument('--numEvents',metavar='Events', type=str,default = 500, help='numEvents (default 500)',required=False)
 parser.add_argument('--runNumber',metavar='runNumber', type=str,default = -1, help='runNumber (default -1)',required=False)
 parser.add_argument('--sampleRate',metavar='sampleRate', type=float,default = 10, help='Sampling rate (GSa/s) (default 10)',required=False)
 #parser.add_argument('--horizontalWindow',metavar='horizontalWindow', type=str,default = 10, help='Full horizontal window in ms (default 10)',required=False)
@@ -172,11 +175,18 @@ print "\nTriggering on %s with %0.3fV threshold, %s polarity." %(args.trigCh,arg
 
 lecroy.write("STORE_SETUP ALL_DISPLAYED,HDD,AUTO,OFF,FORMAT,BINARY")
 
-nevents = int(args.numEvents)
 ##Sequence configuration
 #print "\nTaking %i events in sequence mode."%nevents
 lecroy.write("SEQ OFF")#,%i"%nevents)
 #lecroy.write("SEQ ON,%i"%nevents)
+status = ""
+status = "busy"
+
+run_logf = open(run_log_path,"w")
+run_logf.write(status)
+#run_logf.write("\n")
+run_logf.close()
+
 start = time.time()
 now = datetime.datetime.now()
 current_time = now.strftime("%H:%M:%S")
@@ -206,11 +216,17 @@ end = time.time()
 duration = end-start
 print "\n \n \n  -------------  Acquisition complete.   ------------------------"
 print "\tAcquisition duration: %0.4f s"%duration
-print "\tTrigger rate: %0.1f Hz" %(nevents/duration)
+# print "\tTrigger rate: %0.1f Hz" %(nevents/duration)
 
 # print("Storage configuration:")
 # print(lecroy.query("STORE_SETUP?"))
 print("\n\n  -------------  Beginning save waveforms.  ----------------------")
+tmp_file = open(run_log_path,"w")
+status = "writing"
+tmp_file.write(status)
+tmp_file.write("\n")
+tmp_file.close()
+
 
 start = time.time()
 ### save all active channels with single command, using ALL_DISPLAYED ###
@@ -248,7 +264,12 @@ rm.close()
 final = time.time()
 print "\nFinished run %i."%runNumber
 print "Full script duration: %0.f s"%(final-initial)
-
+tmp_file2 = open(run_log_path,"w")
+status = "ready"
+tmp_file2.write(status)
+tmp_file2.write("\n")
+tmp_file2.close()
+ 
 
 
 
