@@ -87,10 +87,10 @@ float channel_polarity[8] = {-1,-1,-1,1,
 ///// Hit defining parameters   /////
 float tot_thres[8];//=10; //mV. Threshold for measuring ToT
 
-float threshold[8];// = 10; //mV. Threshold for detecting a new hit
-float endthreshold[8];//= 8; //mV. Threshold for defining end of a hit
-int nconsec[8];// = 4; //Number of consecutive samples that must be over threshold to register a hit
-int nconsecEnd[8];// = 4; //Number of consecutive samples that must be within endthreshold of 0 to end pulse
+float threshold[8] = {10,10,10,10,10,10,10,10};// = 10; //mV. Threshold for detecting a new hit
+float endthreshold[8]={10,10,10,10,10,10,10,10};;//= 8; //mV. Threshold for defining end of a hit
+int nconsec[8]={4,4,4,4,4,4,4,4};// = 4; //Number of consecutive samples that must be over threshold to register a hit
+int nconsecEnd[8]={4,4,4,4,4,4,4,4};// = 4; //Number of consecutive samples that must be within endthreshold of 0 to end pulse
 
 int samples_before=20; //Number of samples before pulse to consider.
 int samples_after=20; //Number of samples after pulse to consider.
@@ -114,7 +114,7 @@ int main(int argc, char **argv)
 	configVersion = stoi(argv[2]);
 
 	//Load config
-	readConfigFile();
+	// readConfigFile();
 	cout<<"threshold 5 " <<threshold[5]<<endl;
 	cout<<"threshold 6 " <<threshold[6]<<endl;
 	cout<<"nconsec 3 " <<nconsec[3]<<endl;
