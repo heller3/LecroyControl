@@ -29,14 +29,28 @@ const unsigned int NUM_SAMPLES = 50000002;
 // config file for each channel
 // add branches
 
-// TString inputDir="/home/daq/ScopeData/LecroyConverted/";
-TString configDir="/home/daq/LecroyControl/HitCounter/configs/";
+bool Condor = true;
 
-TString inputDir="/home/daq/SurvivalBeam2021/LecroyScope/RecoData/ConversionRECO/";
+// TString inputDir="/home/daq/ScopeData/LecroyConverted/";
+// TString configDir="/home/daq/LecroyControl/HitCounter/configs/";
+
+// TString inputDir="/home/daq/SurvivalBeam2021/LecroyScope/RecoData/ConversionRECO/";
+// TString inputFileFormat="converted_run";
+
+// TString outputDir="/home/daq/SurvivalBeam2021/LecroyScope/RecoData/HitCounterRECO/RecoWithoutTracks/";
+// TString outputFileFormat="hitTree_run";
+
+//Condor
+TString configDir="";
+
+TString inputDir="";
 TString inputFileFormat="converted_run";
 
-TString outputDir="/home/daq/SurvivalBeam2021/LecroyScope/RecoData/HitCounterRECO/RecoWithoutTracks/";
+TString outputDir="";
 TString outputFileFormat="hitTree_run";
+
+
+
 
 // Output root file
 TFile *file;
@@ -107,7 +121,7 @@ int main(int argc, char **argv)
 
 
 	//Load input
-	TString inFileName = Form("%s/%s%i.root",inputDir.Data(),inputFileFormat.Data(),runNumber);
+	TString inFileName = Form("%s%s%i.root",inputDir.Data(),inputFileFormat.Data(),runNumber);
 	loadInputFile(inFileName);
 	float duration = time_axes[0][NUM_SAMPLES-1] - time_axes[0][0];
 	cout<<"Run number: "<< runNumber<<", duration: "<<duration<<" s"<<endl;
@@ -115,6 +129,7 @@ int main(int argc, char **argv)
 	cout<<"Sample width: "<<sample_width<<" s"<<endl;
 	//Make output tree
 	TString outFileName = Form("%s/v%i/%s%i.root",outputDir.Data(),configVersion,outputFileFormat.Data(),runNumber);
+	if (Condor) outFileName = Form("%s%i.root",outputFileFormat.Data(),runNumber);
 	prepareOutputTree(outFileName);
 	gStyle->SetGridStyle(3);
 	gStyle->SetGridColor(14);
@@ -134,6 +149,7 @@ int main(int argc, char **argv)
 
 void readConfigFile(){
 	TString configFileName = Form("%s/config%i.txt",configDir.Data(),configVersion);
+	if(Condor) configFileName = Form("config%i.txt",configVersion);
 	std::ifstream input(configFileName.Data());
 	string str;
 	if(input){
