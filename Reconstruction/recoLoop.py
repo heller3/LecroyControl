@@ -13,6 +13,7 @@ import shutil
 import ROOT
 import argparse
 
+####Use setup script in home area (setup.sh)
 
 raw_path = "/home/daq/LecroyMount/"
 converted_path = "/home/daq/ScopeData/LecroyConverted/"
@@ -75,7 +76,10 @@ while True:
         # DattorootCmd = '/home/daq/ScopeTimingDAQ/TimingDAQ/NetScopeStandaloneDat2Root --config_file=/home/daq/ScopeTimingDAQ/TimingDAQ/config/Scope_BetaSource.config --input_file=/home/daq/ScopeData/Converted/run_scope%i.root --output_file=/home/daq/ScopeData/Reco/run_scope%i.root --save_meas' % (run,run)
         
         OutputFile = '%s/run_scope%i.root' % (reco_path, run)
-        DattorootCmd = '/home/daq/ScopeTimingDAQ/TimingDAQ/NetScopeStandaloneDat2Root502 --input_file=%s/converted_run%i.root --output_file=%s --config=/home/daq/ScopeTimingDAQ/TimingDAQ/config/Lecroy_BetaSource.config --save_meas'  % (converted_path,run,OutputFile)
+        #DattorootCmd = '/home/daq/ScopeTimingDAQ/TimingDAQ/NetScopeStandaloneDat2Root502 --input_file=%s/converted_run%i.root --output_file=%s --config=/home/daq/ScopeTimingDAQ/TimingDAQ/config/Lecroy_BetaSource.config --save_meas'  % (converted_path,run,OutputFile)
+        DattorootCmd = '/home/daq/ScopeTimingDAQ/TimingDAQ/NetScopeStandaloneDat2Root2002 --input_file=%s/converted_run%i.root --output_file=%s --config=/home/daq/ScopeTimingDAQ/TimingDAQ/config/Lecroy_BetaSource_v2.config --save_meas'  % (converted_path,run,OutputFile)
+
+        print DattorootCmd
         os.system(DattorootCmd)
         
         CoincRate, EntriesWithLGADHits, TotalEntries = RunEntriesScope(OutputFile, LGADChannels, Threshold) # lgad channel starting from zero 

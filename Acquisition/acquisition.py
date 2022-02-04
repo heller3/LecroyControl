@@ -15,7 +15,7 @@ import glob
 # establish communication with scope
 initial = time.time()
 rm = visa.ResourceManager("@py")
-lecroy = rm.open_resource('TCPIP0::192.168.99.169::INSTR')
+lecroy = rm.open_resource('TCPIP0::192.168.133.169::INSTR')
 lecroy.timeout = 3000000
 lecroy.encoding = 'latin_1'
 lecroy.clear()
@@ -165,6 +165,7 @@ print "\nTriggering on %s with %0.3fV threshold, %s polarity." %(args.trigCh,arg
 # lecroy.write("EX:TRSL POS")
 
 lecroy.write("STORE_SETUP ALL_DISPLAYED,HDD,AUTO,OFF,FORMAT,BINARY")
+# lecroy.write("STORE_SETUP C1,HDD,AUTO,OFF,FORMAT,BINARY")
 
 nevents = int(args.numEvents)
 ##Sequence configuration
@@ -220,20 +221,20 @@ tmp_file.close()
 
 start = time.time()
 ### save all active channels with single command, using ALL_DISPLAYED ###
-#lecroy.write(r"""vbs 'app.SaveRecall.Waveform.TraceTitle="Trace%i" ' """%(runNumber))
-#lecroy.write(r"""vbs 'app.SaveRecall.Waveform.SaveFile' """)
+lecroy.write(r"""vbs 'app.SaveRecall.Waveform.TraceTitle="Trace%i" ' """%(runNumber))
+lecroy.write(r"""vbs 'app.SaveRecall.Waveform.SaveFile' """)
 #lecroy.write("STORE")
 #for ichan in range(1,9):
 #	lecroy.write("STORE_SETUP C%i,HDD,AUTO,OFF,FORMAT,BINARY"%ichan)
 	#lecroy.write(r"""vbs 'app.SaveRecall.Waveform.SaveFilename="C%i--Trace%i.trc" ' """%(ichan,int(runNumber)))
 	#lecroy.write(r"""vbs 'app.SaveRecall.Waveform.SaveFile' """)
 
-for ichan in range(1,9):
-       print "Saving channel %i"%ichan
-       lecroy.write("STORE_SETUP C%i,HDD,AUTO,OFF,FORMAT,BINARY"%ichan)
-       lecroy.write(r"""vbs 'app.SaveRecall.Waveform.SaveFilename="C%i--Trace%i.trc" ' """%(ichan,int(runNumber)))
-       lecroy.write(r"""vbs 'app.SaveRecall.Waveform.SaveFile' """)
-       lecroy.query("ALST?")
+# for ichan in range(1,9):
+#        print "Saving channel %i"%ichan
+#        lecroy.write("STORE_SETUP C%i,HDD,AUTO,OFF,FORMAT,BINARY"%ichan)
+#        lecroy.write(r"""vbs 'app.SaveRecall.Waveform.SaveFilename="C%i--Trace%i.trc" ' """%(ichan,int(runNumber)))
+#        lecroy.write(r"""vbs 'app.SaveRecall.Waveform.SaveFile' """)
+#        lecroy.query("ALST?")
 
 lecroy.query("ALST?")
 end = time.time()

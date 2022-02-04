@@ -42,7 +42,7 @@ parser = argparse.ArgumentParser(description='Run info.')
 parser.add_argument('--runNumber',metavar='runNumber', type=str,default = -1, help='runNumber (default -1)',required=False)
 parser.add_argument('--sampleRate',metavar='sampleRate', type=float,default = 10, help='Sampling rate (GSa/s) (default 10)',required=False)
 #parser.add_argument('--horizontalWindow',metavar='horizontalWindow', type=str,default = 10, help='Full horizontal window in ms (default 10)',required=False)
-parser.add_argument('--numPoints',metavar='Points', type=int,default = 10, help='num Msamples (default 10)',required=True)
+parser.add_argument('--numPoints',metavar='Points', type=int,default = 10, help='num Msamples (default 10)',required=False)
 parser.add_argument('--trigCh',metavar='trigCh', type=str, default='EX',help='trigger Channel (EX, or CN',required=False)
 parser.add_argument('--trig',metavar='trig', type=float, default= 0.150, help='trigger value in V',required=False)
 parser.add_argument('--trigSlope',metavar='trigSlope', type=str, default= 'NEGative', help='trigger slope; positive(rise) or negative(fall)',required=False)
@@ -156,16 +156,16 @@ print "\tMake sure sampling rate is set to desired value manually."
 # lecroy.write("TIME_DIV e-9")
 
 print "Setting horizontal offset %0.2f s" %timeoffset
-lecroy.write("TRIG_DELAY %i ns"%(timeoffset*1e9))
+lecroy.write("TRIG_DELAY %0.2f s" % timeoffset)
 
 
 ####### Trigger setup ######
-lecroy.write("TRIG_SELECT Edge,SR,%s"%args.trigCh)
-if args.trigCh != "LINE":
-	lecroy.write("%s:TRLV %0.3fV"%(args.trigCh,args.trig))
-	lecroy.write("TRIG_SLOPE %s" %args.trigSlope)
+#lecroy.write("TRIG_SELECT Edge,SR,%s"%args.trigCh)
+#if args.trigCh != "LINE":
+#	lecroy.write("%s:TRLV %0.3fV"%(args.trigCh,args.trig))
+#	lecroy.write("TRIG_SLOPE %s" %args.trigSlope)
 
-print "\nTriggering on %s with %0.3fV threshold, %s polarity." %(args.trigCh,args.trig,args.trigSlope)
+#print "\nTriggering on %s with %0.3fV threshold, %s polarity." %(args.trigCh,args.trig,args.trigSlope)
 
 #lecroy.write("TRIG_SELECT Edge,SR,LINE")
 #lecroy.write("TRIG_SELECT Edge,SR,EX")
@@ -230,13 +230,18 @@ tmp_file.close()
 
 start = time.time()
 ### save all active channels with single command, using ALL_DISPLAYED ###
-lecroy.write(r"""vbs 'app.SaveRecall.Waveform.TraceTitle="Trace%i" ' """%(runNumber))
-lecroy.write(r"""vbs 'app.SaveRecall.Waveform.SaveFile' """)
-#lecroy.write("STORE")
-#for ichan in range(1,9):
-#	lecroy.write("STORE_SETUP C%i,HDD,AUTO,OFF,FORMAT,BINARY"%ichan)
-	#lecroy.write(r"""vbs 'app.SaveRecall.Waveform.SaveFilename="C%i--Trace%i.trc" ' """%(ichan,int(runNumber)))
-	#lecroy.write(r"""vbs 'app.SaveRecall.Waveform.SaveFile' """)
+# lecroy.write(r"""vbs 'app.SaveRecall.Waveform.TraceTitle="Trace%i" ' """%(runNumber))
+# lecroy.write(r"""vbs 'app.SaveRecall.Waveform.SaveFile' """)
+# lecroy.write("STORE")
+
+for ichan in range(1,9):
+       print "Saving channel %i"%ichan
+       lecroy.write("STORE_SETUP C%i,HDD,AUTO,OFF,FORMAT,BINARY"%ichan)
+       lecroy.write(r"""vbs 'app.SaveRecall.Waveform.SaveFilename="C%i--Trace%i.trc" ' """%(ichan,int(runNumber)))
+       lecroy.write(r"""vbs 'app.SaveRecall.Waveform.SaveFile' """)
+       lecroy.query("ALST?")
+
+
 lecroy.query("ALST?")
 end = time.time()
 
