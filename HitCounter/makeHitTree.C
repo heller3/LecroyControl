@@ -29,14 +29,28 @@ const unsigned int NUM_SAMPLES = 50000002;
 // config file for each channel
 // add branches
 
-// TString inputDir="/home/daq/ScopeData/LecroyConverted/";
-TString configDir="/home/daq/LecroyControl/HitCounter/configs/";
+bool Condor = true;
 
-TString inputDir="/home/daq/SurvivalBeam2021/LecroyScope/RecoData/ConversionRECO/";
+// TString inputDir="/home/daq/ScopeData/LecroyConverted/";
+// TString configDir="/home/daq/LecroyControl/HitCounter/configs/";
+
+// TString inputDir="/home/daq/SurvivalBeam2021/LecroyScope/RecoData/ConversionRECO/";
+// TString inputFileFormat="converted_run";
+
+// TString outputDir="/home/daq/SurvivalBeam2021/LecroyScope/RecoData/HitCounterRECO/RecoWithoutTracks/";
+// TString outputFileFormat="hitTree_run";
+
+//Condor
+TString configDir="";
+
+TString inputDir="";
 TString inputFileFormat="converted_run";
 
-TString outputDir="/home/daq/SurvivalBeam2021/LecroyScope/RecoData/HitCounterRECO/RecoWithoutTracks/";
+TString outputDir="";
 TString outputFileFormat="hitTree_run";
+
+
+
 
 // Output root file
 TFile *file;
@@ -73,10 +87,10 @@ float channel_polarity[8] = {-1,-1,-1,1,
 ///// Hit defining parameters   /////
 float tot_thres[8];//=10; //mV. Threshold for measuring ToT
 
-float threshold[8];// = 10; //mV. Threshold for detecting a new hit
-float endthreshold[8];//= 8; //mV. Threshold for defining end of a hit
-int nconsec[8];// = 4; //Number of consecutive samples that must be over threshold to register a hit
-int nconsecEnd[8];// = 4; //Number of consecutive samples that must be within endthreshold of 0 to end pulse
+float threshold[8] = {10,10,10,10,10,10,10,10};// = 10; //mV. Threshold for detecting a new hit
+float endthreshold[8]={10,10,10,10,10,10,10,10};;//= 8; //mV. Threshold for defining end of a hit
+int nconsec[8]={4,4,4,4,4,4,4,4};// = 4; //Number of consecutive samples that must be over threshold to register a hit
+int nconsecEnd[8]={4,4,4,4,4,4,4,4};// = 4; //Number of consecutive samples that must be within endthreshold of 0 to end pulse
 
 int samples_before=20; //Number of samples before pulse to consider.
 int samples_after=20; //Number of samples after pulse to consider.
@@ -100,14 +114,14 @@ int main(int argc, char **argv)
 	configVersion = stoi(argv[2]);
 
 	//Load config
-	readConfigFile();
+	// readConfigFile();
 	cout<<"threshold 5 " <<threshold[5]<<endl;
 	cout<<"threshold 6 " <<threshold[6]<<endl;
 	cout<<"nconsec 3 " <<nconsec[3]<<endl;
 
 
 	//Load input
-	TString inFileName = Form("%s/%s%i.root",inputDir.Data(),inputFileFormat.Data(),runNumber);
+	TString inFileName = Form("%s%s%i.root",inputDir.Data(),inputFileFormat.Data(),runNumber);
 	loadInputFile(inFileName);
 	float duration = time_axes[0][NUM_SAMPLES-1] - time_axes[0][0];
 	cout<<"Run number: "<< runNumber<<", duration: "<<duration<<" s"<<endl;
@@ -115,6 +129,7 @@ int main(int argc, char **argv)
 	cout<<"Sample width: "<<sample_width<<" s"<<endl;
 	//Make output tree
 	TString outFileName = Form("%s/v%i/%s%i.root",outputDir.Data(),configVersion,outputFileFormat.Data(),runNumber);
+	if (Condor) outFileName = Form("%s%i.root",outputFileFormat.Data(),runNumber);
 	prepareOutputTree(outFileName);
 	gStyle->SetGridStyle(3);
 	gStyle->SetGridColor(14);
@@ -134,6 +149,7 @@ int main(int argc, char **argv)
 
 void readConfigFile(){
 	TString configFileName = Form("%s/config%i.txt",configDir.Data(),configVersion);
+	if(Condor) configFileName = Form("config%i.txt",configVersion);
 	std::ifstream input(configFileName.Data());
 	string str;
 	if(input){
