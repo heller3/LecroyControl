@@ -63,8 +63,10 @@ double hit_time;
 float integral;
 float tot;
 int nsamples_above_thresh;
+int n_over;
 int sample_start;
 float time_since_previous_hit;
+float amp_ratio_previous_hit;
 
 
 //Input file and branches
@@ -87,14 +89,15 @@ float channel_polarity[8] = {-1,-1,-1,-1,
 ///// Hit defining parameters   /////
 float tot_thres[8]= {10,10,10,10,10,10,10,10};//=10; //mV. Threshold for measuring ToT
 
-float threshold[8] = {10,10,10,10,10,10,10,10};// = 10; //mV. Threshold for detecting a new hit
+float threshold[8] = {20,20,20,20,20,20,20,20};// = 10; //mV. Threshold for detecting a new hit
 float endthreshold[8]={10,10,10,10,10,10,10,10};;//= 8; //mV. Threshold for defining end of a hit
-int nconsec[8]={4,4,4,4,4,4,4,4};// = 4; //Number of consecutive samples that must be over threshold to register a hit
-int nconsecEnd[8]={4,4,4,4,4,4,4,4};// = 4; //Number of consecutive samples that must be within endthreshold of 0 to end pulse
+int nconsec[8]={2,2,2,2,2,2,2,2};// = 4; //Number of consecutive samples that must be over threshold to register a hit
+int nconsecEnd[8]={1,1,1,1,1,1,1,1};// = 4; //Number of consecutive samples that must be within endthreshold of 0 to end pulse
 
-int samples_before=20; //Number of samples before pulse to consider.
-int samples_after=20; //Number of samples after pulse to consider.
-
+int samples_before=15; //Number of samples before pulse to consider.
+int samples_after=15; //Number of samples after pulse to consider.
+//0.4 ns per point
+//
 
 int displays_to_print_per_channel = 15;
 int already_printed[NUM_CHANNELS];
@@ -104,7 +107,7 @@ void readConfigFile();
 void loadInputFile(TString inFileName);
 void prepareOutputTree(TString outFileName);
 void printSegment(TH1F * h, int start_sample,int chan);
-void registerHit(int start_sample, int end_sample, int chan, int prev_hit_peak_sample);
+void registerHit(int start_sample, int end_sample, int chan, int prev_hit_peak_sample, int nover);
 void processChannel(int chan);
 
 
@@ -221,16 +224,17 @@ void printSegment(TH1F * h, int start_sample,int end_sample, int chan){
 
 	c1->Print(Form("displays/run%i_chan%i_sample_%i.pdf",runNumber,chan,start_sample));
 	// c1->Print(Form("displays/chan_%i_sample_%i.root",chan,start_sample));
-
+	
 }
 
-void registerHit(int start_sample, int end_sample, int chan, int prev_hit_peak_sample){
+void registerHit(int start_sample, int end_sample, int chan, int prev_hit_peak_sample, int nover){
 
 	TH1F * h = new TH1F(Form("h_%i",start_sample),"",end_sample-start_sample+1,time_axes[0][start_sample],time_axes[0][end_sample]);
 	for(int is=start_sample; is<=end_sample;is++){
 		h->SetBinContent(is - start_sample +1,channel_polarity[chan]*1000.*vertical_axes[chan][is]);
 	}
-
+	float amp_previous_hit = amp;
+	int prev_chan = scopechan;
 	sample_start = start_sample;
 	scopechan = chan;
 	amp = h->GetMaximum();
@@ -238,9 +242,13 @@ void registerHit(int start_sample, int end_sample, int chan, int prev_hit_peak_s
 	h->GetBinWithContent(amp,maxbin);
 	hit_time = h->GetBinCenter(maxbin);
 	integral = h->Integral();
-
+	n_over = nover;
 
 	time_since_previous_hit = hit_time - time_axes[0][prev_hit_peak_sample];
+	if (amp_previous_hit!=0 && prev_chan==chan){
+		amp_ratio_previous_hit= amp / amp_previous_hit;
+	}
+	else amp_previous_hit=-1;
 
 	tot=0;
 	for(int is=maxbin;is>0;is--){
@@ -266,6 +274,7 @@ void registerHit(int start_sample, int end_sample, int chan, int prev_hit_peak_s
 		printSegment(h, start_sample,end_sample,chan);
 		already_printed[chan]++;
 	}
+	h->Delete();
 
 }
 void processChannel(int chan){
@@ -303,7 +312,8 @@ void processChannel(int chan){
 		}//not in pulse
 		else{ //in a pulse, now looking to end the pulse.
 
-			if(fabs(this_sample)<endthreshold[chan] || fabs(this_sample) <0.1*local_max ) nunder++;
+			// if(fabs(this_sample)<endthreshold[chan] || fabs(this_sample) <0.1*local_max ) nunder++;
+			if(this_sample<endthreshold[chan] || fabs(this_sample) <0.1*local_max ) nunder++;
 			else {
 				nunder=0;
 				if(this_sample > local_max) {
@@ -314,15 +324,17 @@ void processChannel(int chan){
 
 			if(nunder>=nconsecEnd[chan]){ //Found enough low samples to end pulse and start looking for next one. Reset counters
 				inpulse = false; // End the pulse
-				nover = 0;
-				nunder = 0;
+	
 				
 				// registerHit(sample_of_local_max-samples_before,sample_of_local_max+samples_after,chan,previous_hit_sample_of_local_max);
-				registerHit(i_begin-samples_before,isample+samples_after,chan,previous_hit_sample_of_local_max);
+				registerHit(i_begin-samples_before,isample+samples_after,chan,previous_hit_sample_of_local_max,isample-i_begin-nunder);
+				nover = 0;
+				nunder = 0;
 				
 				previous_hit_sample_of_local_max = sample_of_local_max;
 				local_max=0;
 				sample_of_local_max=0;
+				isample+=samples_after;
 				i_begin = isample;
 			}
 		}
@@ -348,6 +360,9 @@ void prepareOutputTree(TString outFileName){
 	TBranch * b_nsamples_above_thresh = tree->Branch("nsamples_above_thresh",&nsamples_above_thresh,"nsamples_above_thresh/I");
     tree->SetBranchAddress("nsamples_above_thresh",&nsamples_above_thresh,&b_nsamples_above_thresh);
 
+	TBranch * b_n_over = tree->Branch("n_over",&n_over,"n_over/I");
+    tree->SetBranchAddress("n_over",&n_over,&b_n_over);
+
     TBranch * b_integral = tree->Branch("integral",&integral,"integral/F");
     tree->SetBranchAddress("integral",&integral,&b_integral);
 
@@ -356,6 +371,9 @@ void prepareOutputTree(TString outFileName){
 
     TBranch * b_time_since_previous_hit = tree->Branch("time_since_previous_hit",&time_since_previous_hit,"time_since_previous_hit/F");
     tree->SetBranchAddress("time_since_previous_hit",&time_since_previous_hit,&b_time_since_previous_hit);
+
+    TBranch * b_amp_ratio_previous_hit = tree->Branch("amp_ratio_previous_hit",&amp_ratio_previous_hit,"amp_ratio_previous_hit/F");
+    tree->SetBranchAddress("amp_ratio_previous_hit",&amp_ratio_previous_hit,&b_amp_ratio_previous_hit);
 
 
 
